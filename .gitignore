@@ -1,0 +1,15 @@
+# Ignore everything
+*
+
+# Unignore directories and typical git files
+!*/
+!.gitignore
+!README.md
+!LICENSE
+
+# Unignore nix files
+!*.nix
+
+# Unignore Coq files
+!_CoqProject
+!*.v
