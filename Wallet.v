@@ -131,35 +131,6 @@ induction l; intros; simpl.
     * assumption.
 Qed.
 
-
-Lemma nil_eq_app :
-forall (b: nat) k,
-[] = k ++ [b] -> False.
-Proof.
-intros. destruct k.
-- inversion H.
-- inversion H.
-Qed.
-
-Lemma cons_eq_app :
-forall (a b: nat) l k,
-a :: l = k ++ [b] ->
-(l = [] /\ k = [] /\ a = b) \/ exists l', l = l' ++ [b].
-Proof.
-intros a b l k. revert l a b. induction k; intros; simpl.
-- left. simpl in H. destruct l.
-  + inversion H; subst. repeat (split; try reflexivity).
-  + inversion H.
-- right. destruct l.
-  + inversion H; subst. destruct k.
-    * inversion H2.
-    * inversion H2.
-  + rewrite <- app_comm_cons in H. inversion H; subst.
-    apply IHk in H2. destruct H2 as [[A[B C]]|_].
-    * subst. exists []. reflexivity.
-    * inversion H; subst. exists k. assumption.
-Qed.
-
 Theorem next_coin_ge_one :
 forall l t,
 is_good l ->
