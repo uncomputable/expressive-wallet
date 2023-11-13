@@ -4,6 +4,82 @@ Require Import Coq.Lists.List.
 Import ListNotations.
 Require Import Lia.
 
+(* A set of coin denominations is good *)
+(* if it is sorted (in decreasing order) and *)
+(* if the coin 1 is included. *)
+(* In this case, our algorithms work and *)
+(* all target amounts can be expressed. *)
+Definition is_good (l : list nat) : Prop :=
+StronglySorted ge l /\ exists l', l = l' ++ [1].
+
+Example is_good1 :
+~ is_good [].
+Proof.
+unfold is_good. intros [G [k H]]. destruct k; inversion H.
+Qed.
+
+Example is_good2 :
+is_good [1].
+Proof.
+unfold is_good. split.
+- repeat constructor.
+- exists []. reflexivity.
+Qed.
+
+Example is_good3 :
+~ is_good [2].
+Proof.
+unfold is_good. intros [G [k H]].
+destruct k; inversion H. destruct k; inversion H2.
+Qed.
+
+Example is_good4 :
+is_good [2;1].
+Proof.
+unfold is_good. split.
+- repeat constructor.
+- exists [2]. reflexivity.
+Qed.
+
+Example is_good5 :
+~ is_good [1;2].
+Proof.
+unfold is_good. intros [G [k H]].
+destruct k; inversion H. destruct k; inversion H2. destruct k; inversion H4.
+Qed.
+
+Theorem is_good_in_one :
+forall l,
+is_good l ->
+In 1 l.
+Proof.
+unfold is_good. intros l [G [k H]]. rewrite H.
+rewrite in_app_iff. right. simpl. left. reflexivity.
+Qed.
+
+Theorem is_good_le_one :
+forall l,
+is_good l ->
+Forall (le 1) l.
+Proof.
+unfold is_good. induction l; intros; simpl.
+- constructor.
+- destruct H as [G [k H]]. constructor.
+  + destruct a.
+    * inversion G; subst. destruct k.
+      -- inversion H.
+      -- inversion H; subst. rewrite Forall_forall in H3. apply H3.
+         rewrite in_app_iff. right. simpl. left. reflexivity.
+    * lia.
+  + destruct l.
+    * constructor.
+    * apply IHl. split.
+      -- inversion G. assumption.
+      -- destruct k.
+        ++ inversion H.
+        ++ exists k. inversion H. reflexivity.
+Qed.
+
 (* From the list `l` of denominations, *)
 (* return the largest coin that is less equal the target amount `t` *)
 Fixpoint next_coin (l: list nat) (t: nat) : nat :=
@@ -51,10 +127,6 @@ induction l; intros; simpl.
     * assumption.
 Qed.
 
-(* A set of coin denominations is good if the least coin is 1 *)
-(* In this case, all target amounts can be expressed *)
-Definition is_good (l : list nat) : Prop :=
-StronglySorted ge l /\ exists l', l = l' ++ [1].
 
 Lemma nil_eq_app :
 forall (b: nat) k,
