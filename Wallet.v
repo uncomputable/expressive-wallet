@@ -8,7 +8,7 @@ Require Import Lia.
 (* if it is sorted (in decreasing order) and *)
 (* if the coin 1 is included. *)
 (* In this case, our algorithms work and *)
-(* all target amounts can be expressed. *)
+(* all targets can be expressed. *)
 Definition is_good (l : list nat) : Prop :=
 StronglySorted ge l /\ exists l', l = l' ++ [1].
 
@@ -80,7 +80,7 @@ unfold is_good. induction l; intros; simpl.
         ++ exists k. inversion H. reflexivity.
 Qed.
 
-(* Return the largest coin that is less equal the target amount *)
+(* Return the largest coin that is less equal the target *)
 Fixpoint next_coin (l: list nat) (t: nat) : nat :=
 match l with
 | [] => 0
@@ -94,7 +94,7 @@ Compute (next_coin [5;2;1] 3).
 Compute (next_coin [5;2;1] 4).
 Compute (next_coin [5;2;1] 5).
 
-(* The next coin is less equal the target amount *)
+(* The next coin is less equal the target *)
 Theorem next_coin_le :
 forall l t,
 next_coin l t <= t.
@@ -106,8 +106,9 @@ induction l; intros; simpl.
   + apply IHl.
 Qed.
 
-(* The next coin is greater equal all coins below the target amount *)
-(* In other words, the next coin is the target amount "rounded down" to the next denomination *)
+(* The next coin is greater equal all coins below the target *)
+(* In other words, the next coin is the target "rounded down" *)
+(* to the next denomination *)
 Theorem next_coin_ge :
 forall l x t,
 is_good l ->
@@ -197,7 +198,7 @@ intros. exists (S t - next_coin l (S t)). split.
 - apply leq_eq. apply next_coin_le.
 Qed.
 
-(* Set `l` is a subset of set `k` if all elements from `l` are in `k` *)
+(* Every element in the subset is also in the superset *)
 Definition subset (l k: list nat) : Prop :=
 forall x,
 In x l -> In x k.
@@ -244,15 +245,15 @@ Proof.
 intros. unfold sum. simpl. lia.
 Qed.
 
-(* A wallet expresses a target amount *)
+(* A wallet expresses a target *)
 (* if each amount below the target is equal to the sum of a subset of the wallet *)
 Definition can_express (w: list nat) (t: nat) : Prop :=
 forall x,
 x <= t -> exists w',
 subset w' w /\ sum w' = x.
 
-(* If a wallet can express a target amount, *)
-(* then the wallet plus the next coin can express the target amount plus one *)
+(* If a wallet can express a target, *)
+(* then the wallet plus the next coin can express the target plus one *)
 (* In other words, adding the next coin makes progress. *)
 Theorem next_coin_express :
 forall t w l,
