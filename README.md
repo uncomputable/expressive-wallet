@@ -61,3 +61,28 @@ It is surprising how slowly the wallet grows with respect to the target. I can't
 | 61     | [1, 2, 2, 5, 10, 20, 20, 50] |
 | ...    | ...                          |
 | 100    | [1, 2, 2, 5, 10, 20, 20, 50] |
+
+## Develop the project
+
+Enter a nix shell to obtain Coq.
+
+```bash
+nix-shell -p coq
+```
+
+To use CoqIDE, add its nix package to the nix shell.
+
+```bash
+nix-shell -p coq coqPackages.coqide
+```
+
+## Build the project
+
+First, enter the development environment (see above).
+
+Then generate and execute the Coq makefile.
+
+```bash
+coq_makefile -f _CoqProject -o CoqMakefile
+make -f CoqMakeFile
+```
