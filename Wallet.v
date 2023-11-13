@@ -260,9 +260,18 @@ unfold subset. destruct l; intros; simpl.
   + apply H in H1. right. assumption.
 Qed.
 
-(* We sum a list via left folding *)
+(* Sum a list via folding *)
 Definition sum (l: list nat) : nat :=
-fold_left Nat.add l 0.
+fold_right Nat.add 0 l.
+
+Compute (sum [1;2;3]).
+
+Theorem sum_cons :
+forall (x: nat) l,
+sum (x :: l) = sum l + x.
+Proof.
+intros. unfold sum. simpl. lia.
+Qed.
 
 (* Wallet `w` expresses target amount `t` if *)
 (* for each amount 0 <= x <= t there is a subset w' of w that sums to x *)
