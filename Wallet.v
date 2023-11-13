@@ -80,8 +80,7 @@ unfold is_good. induction l; intros; simpl.
         ++ exists k. inversion H. reflexivity.
 Qed.
 
-(* From the list `l` of denominations, *)
-(* return the largest coin that is less equal the target amount `t` *)
+(* Return the largest coin that is less equal the target amount *)
 Fixpoint next_coin (l: list nat) (t: nat) : nat :=
 match l with
 | [] => 0
@@ -110,20 +109,25 @@ Qed.
 (* The next coin is greater equal all coins below the target amount *)
 (* In other words, the next coin is the target amount "rounded down" to the next denomination *)
 Theorem next_coin_ge :
-forall l t x,
-StronglySorted ge l -> In x l -> x <= t -> x <= next_coin l t.
+forall l x t,
+is_good l ->
+In x l ->
+x <= t ->
+x <= next_coin l t.
 Proof.
 induction l; intros; simpl.
 - destruct H0.
-- inversion H; subst. destruct (a <=? t) eqn:G.
-  + apply leb_complete in G. inversion H0; subst.
+- destruct H as [G [k H]]. destruct (a <=? t) eqn:F.
+  + apply leb_complete in F. inversion H0; subst.
     * reflexivity.
-    * rewrite Forall_forall in H5. apply H5 in H2. lia.
-  + apply IHl.
+    * inversion G; subst. rewrite Forall_forall in H6. apply H6 in H2. lia.
+  + apply leb_complete_conv in F. inversion H0; try lia. apply IHl.
+    * unfold is_good. split.
+      -- inversion G. assumption.
+      -- destruct k.
+        ++ inversion H; subst. inversion H2.
+        ++ exists k. inversion H. reflexivity.
     * assumption.
-    * inversion H0; subst.
-      -- apply leb_complete_conv in G. lia.
-      -- assumption.
     * assumption.
 Qed.
 
@@ -156,28 +160,70 @@ intros a b l k. revert l a b. induction k; intros; simpl.
     * inversion H; subst. exists k. assumption.
 Qed.
 
+Theorem next_coin_ge_one :
+forall l t,
+is_good l ->
+1 <= next_coin l (S t).
+Proof.
+intros. apply next_coin_ge.
+- assumption.
+- apply is_good_in_one. assumption.
+- lia.
+Qed.
+
 Theorem next_coin_one :
 forall l,
 is_good l ->
 next_coin l 1 = 1.
 Proof.
-unfold is_good. intros l [H [k G]].
-assert (Lt: next_coin l 1 <= 1). { apply next_coin_le. }
+intros.
+assert (Lt: next_coin l 1 <= 1).
+{ apply next_coin_le. }
 assert (Gt: 1 <= next_coin l 1).
 { apply next_coin_ge.
   - assumption.
-  - rewrite G. apply in_or_app. right. simpl. left. reflexivity.
-  - lia.
-}
+  - apply is_good_in_one. assumption.
+  - lia. }
 lia.
 Qed.
 
 Example next_coin_zero_false :
 forall l,
-is_good l -> next_coin l 0 = 1 -> False.
+is_good l ->
+~ next_coin l 0 = 1.
 Proof.
 intros. assert (G: next_coin l 0 <= 0). { apply next_coin_le. }
 lia.
+Qed.
+
+Theorem leq_eq :
+forall x y,
+x <= y ->
+x + (y - x) = y.
+Proof.
+intros. symmetry. apply Arith_prebase.le_plus_minus_stt. assumption.
+Qed.
+
+Theorem leq_eq_ex :
+forall x y,
+x <= y -> exists z,
+z <= y /\ x + z = y.
+Proof.
+intros. exists (y - x). split.
+- apply Nat.le_sub_l.
+- apply leq_eq. assumption.
+Qed.
+
+Theorem next_coin_gap :
+forall l t,
+is_good l -> exists x,
+x <= t /\ next_coin l (S t) + x = (S t).
+Proof.
+intros. exists (S t - next_coin l (S t)). split.
+- apply next_coin_ge_one with (t := t) in H. destruct (next_coin l (S t)).
+  + lia.
+  + lia.
+- apply leq_eq. apply next_coin_le.
 Qed.
 
 (* Set `l` is a subset of set `k` if all elements from `l` are in `k` *)
