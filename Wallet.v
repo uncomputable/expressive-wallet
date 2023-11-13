@@ -231,6 +231,35 @@ Definition subset (l k: list nat) : Prop :=
 forall x,
 In x l -> In x k.
 
+Theorem subset_nil :
+forall l,
+subset [] l.
+Proof.
+unfold subset. intros. inversion H.
+Qed.
+
+Theorem subset_cons :
+forall l k x,
+subset l k ->
+subset l (x :: k).
+Proof.
+unfold subset. intros. apply H in H0. eapply in_cons in H0. apply H0.
+Qed.
+
+Theorem subset_eq :
+forall l k x,
+subset l k ->
+subset (x :: l) (x :: k).
+Proof.
+unfold subset. destruct l; intros; simpl.
+- inversion H0; subst.
+  + left. reflexivity.
+  + right. inversion H1.
+- inversion H0; subst.
+  + left. reflexivity.
+  + apply H in H1. right. assumption.
+Qed.
+
 (* We sum a list via left folding *)
 Definition sum (l: list nat) : nat :=
 fold_left Nat.add l 0.
