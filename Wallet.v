@@ -273,29 +273,52 @@ Proof.
 intros. unfold sum. simpl. lia.
 Qed.
 
-(* Wallet `w` expresses target amount `t` if *)
-(* for each amount 0 <= x <= t there is a subset w' of w that sums to x *)
+(* A wallet expresses a target amount *)
+(* if each amount below the target is equal to the sum of a subset of the wallet *)
 Definition can_express (w: list nat) (t: nat) : Prop :=
 forall x,
-0 <= x <= t -> exists w',
-subset w' w /\ sum w' = t.
+x <= t -> exists w',
+subset w' w /\ sum w' = x.
 
+(* If a wallet can express a target amount, *)
+(* then the wallet plus the next coin can express the target amount plus one *)
+(* In other words, adding the next coin makes progress. *)
 Theorem next_coin_express :
 forall t w l,
 is_good l ->
 can_express w t ->
 can_express ((next_coin l (S t)) :: w) (S t).
 Proof.
-unfold is_good. unfold can_express. induction t; intros; simpl.
-- exists [1]. split.
-  + unfold subset. intros y G. rewrite next_coin_one.
-    * inversion G; subst.
-      -- simpl. left. reflexivity.
-      -- inversion H2.
+unfold can_express. destruct t; intros; simpl.
+- destruct x.
+  (* Amount x = 0 *)
+  + exists []. split.
+    * apply subset_nil.
+    * reflexivity.
+  (* Amount x = 1 *)
+  + exists [1]. assert (G: x = 0). { lia. } subst. split.
+    * rewrite next_coin_one.
+      -- apply subset_eq. apply subset_nil.
+      -- assumption.
+    * reflexivity.
+- destruct (x =? S (S t)) eqn:G.
+  (* Amount x = S (S t)) *)
+  (* Construct subset from next_coin l (S (S t)) and existing subsets of wallet w *)
+  + rewrite Nat.eqb_eq in G; subst.
+    assert (G: exists x, x <= S t /\ next_coin l (S (S t)) + x = S (S t)).
+    { apply next_coin_gap. assumption. } destruct G as [x [F G]].
+    apply (H0 x) in F. destruct F as [w' [E F]].
+    exists (next_coin l (S (S t)) :: w'). split.
+    * apply subset_eq. assumption.
+    * rewrite sum_cons. lia.
+  (* Amount x <= S t *)
+  (* Take existing subset of wallet w *)
+  + rewrite Nat.eqb_neq in G. assert (F: x <= S t). { lia. }
+    apply H0 in F. destruct F as [w' [E F]].
+    exists w'. split.
+    * apply subset_cons. assumption.
     * assumption.
-  + reflexivity.
-- admit.
-Admitted.
+Qed.
 
 Fixpoint strategy (l: list nat) (t: nat) : list nat :=
 match t with
