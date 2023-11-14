@@ -245,23 +245,157 @@ Proof.
 intros. unfold sum. simpl. lia.
 Qed.
 
-(* A wallet expresses a target *)
-(* if each amount below the target is equal to the sum of a subset of the wallet *)
-Definition can_express (w: list nat) (t: nat) : Prop :=
+(* A wallet is expressive *)
+(* if each amount below the maximum is equal to the sum of a subset of the wallet *)
+(* The maximum is the sum of all coins *)
+Definition expressive (w: list nat) : Prop :=
 forall x,
-x <= t -> exists w',
+x <= sum w -> exists w',
 subset w' w /\ sum w' = x.
 
-(* If a wallet can express a target, *)
+(* The empty wallet is expressive *)
+Theorem expressive_nil :
+expressive [].
+Proof.
+unfold expressive. intros. assert (G: x = 0). { simpl in H. lia. } subst.
+exists []. split.
+- apply subset_nil.
+- reflexivity.
+Qed.
+
+Example expressive1 :
+expressive [].
+Proof.
+apply expressive_nil.
+Qed.
+
+Example expressive2 :
+expressive [1].
+Proof.
+unfold expressive. intros. destruct x.
+(* Express 0 *)
+- exists []. split; try reflexivity. apply subset_nil.
+(* Express 1 *)
+- assert (G: x = 0). { simpl in H. lia. } subst.
+  exists [1]. split; try reflexivity. apply subset_eq. apply subset_nil.
+Qed.
+
+Example expressive3 :
+~ expressive [2].
+Proof.
+unfold expressive. intros H. specialize (H 1).
+assert (G: 1 <= sum [2]). { simpl. lia. }
+apply H in G. destruct G as [w' [F G]].
+(* Fail to derive contradiction from *)
+(* subset w' [2] (meaning that w' = [] or w' = [2]) and *)
+(* sum w' = 1 (meaing that w' = [1]) *)
+Admitted.
+
+Example expressive4 :
+expressive [1;2].
+Proof.
+unfold expressive. intros. destruct x.
+(* Express 0 *)
+- exists []. split; try reflexivity. apply subset_nil.
+- destruct x.
+  (* Express 1 *)
+  + exists [1]. split; try reflexivity. apply subset_eq. apply subset_nil.
+  + destruct x.
+    (* Express 2 *)
+    * exists [2]. split; try reflexivity. apply subset_cons. apply subset_eq. apply subset_nil.
+    (* Express 3 *)
+    * assert (G: x = 0). { simpl in H. lia. } subst.
+      exists [1;2]. split; try reflexivity. repeat apply subset_eq. apply subset_nil.
+Qed.
+
+Example expressive5 :
+expressive [2;1].
+Proof.
+unfold expressive. intros. destruct x.
+(* Express 0 *)
+- exists []. split; try reflexivity. apply subset_nil.
+- destruct x.
+  (* Express 1 *)
+  + exists [1]. split; try reflexivity. apply subset_cons. apply subset_eq. apply subset_nil.
+  + destruct x.
+    (* Express 2 *)
+    * exists [2]. split; try reflexivity. apply subset_eq. apply subset_nil.
+    (* Express 3 *)
+    * assert (G: x = 0). { simpl in H. lia. } subst.
+      exists [2;1]. split; try reflexivity. repeat apply subset_eq. apply subset_nil.
+Qed.
+
+(* If a wallet is expressive, *)
+(* then we can add a coin between 1 and the wallet sum *)
+(* to obtain another expressive wallet *)
+Theorem expressive_cons :
+forall w y,
+expressive w ->
+y <= sum w ->
+expressive (y :: w).
+Proof.
+unfold expressive. induction w; intros; simpl.
+(* Wallet [] *)
+(* Amount x = 0 *)
+- assert (G: y = 0). { simpl in H0. lia. }
+  assert (F: x = 0). { simpl in H1. lia. }
+  subst. exists [0]. split; try reflexivity.
+  apply subset_eq. apply subset_nil.
+(* Wallet (a :: w) *)
+- destruct (x <=? sum (a :: w)) eqn:G.
+  (* Amount x <= sum (a :: w) *)
+  (* Use existing subset of wallet (a :: w) *)
+  + apply leb_complete in G. apply H in G. destruct G as [w' [F G]].
+    exists w'. split.
+    * apply subset_cons. assumption.
+    * assumption.
+  (* Amount x > sum (a :: w) *)
+  (* x = y + z for some 1 <= z <= sum (a :: w) *)
+  (* Construct subset from [y] and subset for z inside wallet (a :: w) *)
+  + apply leb_complete_conv in G.
+    assert (F: exists z, 1 <= z <= sum (a :: w) /\ x = y + z).
+    { simpl in H1. apply leq_eq_ex in H1. destruct H1 as [z' [E F]].
+      (* Truncated subtraction requires extra hypotheses *)
+      assert (D: x = y + sum (a :: w) - z'). { simpl. lia. }
+      assert (C: z' <= y). { lia. }
+      exists (sum (a :: w) - z'). lia. }
+    destruct F as [z [E F]]. assert (E': z <= sum (a :: w)). { lia. }
+    apply H in E'. destruct E' as [w' [C D]].
+    exists (y :: w'). split.
+    * apply subset_eq. assumption.
+    * rewrite F. simpl. lia.
+Qed.
+
+(* A wallet expresses a target *)
+(* if the wallet is expressive and *)
+(* if the wallet is large enough to sum to the target *)
+Definition expresses (w: list nat) (t: nat) : Prop :=
+expressive w /\ t <= sum w.
+
+Theorem expresses_zero :
+forall w,
+expressive w ->
+expresses w 0.
+Proof.
+unfold expresses. intros. split.
+- assumption.
+- lia.
+Qed.
+
+(* If a wallet expresses a target, *)
 (* then the wallet plus the next coin can express the target plus one *)
 (* In other words, adding the next coin makes progress. *)
-Theorem next_coin_express :
+Theorem expresses_next_coin :
 forall t w l,
 is_good l ->
-can_express w t ->
-can_express ((next_coin l (S t)) :: w) (S t).
+expresses w t ->
+expresses ((next_coin l (S t)) :: w) (S t).
 Proof.
-unfold can_express. destruct t; intros; simpl.
+Admitted.
+(* TODO: Prove next_coin l (S t) <= sum w *)
+(* Then use expressive_cons *)
+(*
+unfold expresses. destruct t; intros; simpl.
 - destruct x.
   (* Amount x = 0 *)
   + exists []. split.
@@ -291,6 +425,7 @@ unfold can_express. destruct t; intros; simpl.
     * apply subset_cons. assumption.
     * assumption.
 Qed.
+*)
 
 Fixpoint strategy (l: list nat) (t: nat) : list nat :=
 match t with
@@ -306,7 +441,7 @@ Compute (strategy [5;2;1] 3).
 Compute (strategy [5;2;1] 4).
 Compute (strategy [5;2;1] 5).
 
-Theorem strategy_express :
+Theorem expresses_strategy :
 forall l t,
-can_express (strategy l t) t.
+expresses (strategy l t) t.
 Admitted.
