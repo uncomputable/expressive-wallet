@@ -430,8 +430,8 @@ Qed.
 Fixpoint strategy (l: list nat) (t: nat) : list nat :=
 match t with
 | 0 => []
-| S t' => let wallet := strategy l t' in
-          if t <=? sum wallet then wallet else (next_coin l t) :: wallet
+| S t' => let w := strategy l t' in
+          if t <=? sum w then w else (next_coin l t) :: w
 end.
 
 Compute (strategy [5;2;1] 0).
