@@ -326,34 +326,38 @@ unfold expressive. intros. destruct x.
 Qed.
 
 (* If a wallet is expressive, *)
-(* then we can add a coin between 1 and the wallet sum *)
+(* then we can add a coin between 0 and the wallet sum + 1 *)
 (* to obtain another expressive wallet *)
 Theorem expressive_cons :
 forall w y,
 expressive w ->
-y <= sum w ->
+y <= S (sum w) ->
 expressive (y :: w).
 Proof.
 unfold expressive. induction w; intros; simpl.
 (* Wallet [] *)
-(* Amount x = 0 *)
-- assert (G: y = 0). { simpl in H0. lia. }
-  assert (F: x = 0). { simpl in H1. lia. }
-  subst. exists [0]. split; try reflexivity.
-  apply subset_eq. apply subset_nil.
+- simpl in H0. inversion H0; subst.
+  (* New wallet 1 :: [] *)
+  + inversion H1; subst.
+    (* Express 1 *)
+    * exists [1]. split; try reflexivity. apply subset_eq. apply subset_nil.
+    (* Express 0 *)
+    * inversion H3; subst. exists []. split; try reflexivity. apply subset_nil.
+  (* New wallet 0 :: [] *)
+  (* Express 0 *)
+  + inversion H3; subst. inversion H1. exists []. split; try reflexivity. apply subset_nil.
 (* Wallet (a :: w) *)
 - destruct (x <=? sum (a :: w)) eqn:G.
-  (* Amount x <= sum (a :: w) *)
+  (* Express x where x <= sum (a :: w) *)
   (* Use existing subset of wallet (a :: w) *)
   + apply leb_complete in G. apply H in G. destruct G as [w' [F G]].
-    exists w'. split.
-    * apply subset_cons. assumption.
-    * assumption.
-  (* Amount x > sum (a :: w) *)
+    exists w'. split; try assumption. apply subset_cons. assumption.
+  (* Express x where sum (a :: w) < x <= sum (a :: w) + y *)
+  (* The difference z between x and y is small *)
   (* x = y + z for some 1 <= z <= sum (a :: w) *)
-  (* Construct subset from [y] and subset for z inside wallet (a :: w) *)
+  (* Take [y] and add the subset for z from wallet (a :: w) *)
   + apply leb_complete_conv in G.
-    assert (F: exists z, 1 <= z <= sum (a :: w) /\ x = y + z).
+    assert (F: exists z, z <= sum (a :: w) /\ x = y + z).
     { simpl in H1. apply leq_eq_ex in H1. destruct H1 as [z' [E F]].
       (* Truncated subtraction requires extra hypotheses *)
       assert (D: x = y + sum (a :: w) - z'). { simpl. lia. }
@@ -392,7 +396,7 @@ expresses w t ->
 expresses ((next_coin l (S t)) :: w) (S t).
 Proof.
 Admitted.
-(* TODO: Prove next_coin l (S t) <= sum w *)
+(* TODO: Prove next_coin l (S t) <= S (sum w) *)
 (* Then use expressive_cons *)
 (*
 unfold expresses. destruct t; intros; simpl.
