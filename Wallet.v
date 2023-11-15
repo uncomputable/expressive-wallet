@@ -186,18 +186,6 @@ intros. exists (y - x). split.
 - apply leq_eq. assumption.
 Qed.
 
-Theorem next_coin_gap :
-forall l t,
-is_good l -> exists x,
-x <= t /\ next_coin l (S t) + x = (S t).
-Proof.
-intros. exists (S t - next_coin l (S t)). split.
-- apply next_coin_ge_one with (t := t) in H. destruct (next_coin l (S t)).
-  + lia.
-  + lia.
-- apply leq_eq. apply next_coin_le.
-Qed.
-
 (* Every element in the subset is also in the superset *)
 Definition subset (l k: list nat) : Prop :=
 forall x,
@@ -237,13 +225,6 @@ Definition sum (l: list nat) : nat :=
 fold_right Nat.add 0 l.
 
 Compute (sum [1;2;3]).
-
-Theorem sum_cons :
-forall (x: nat) l,
-sum (x :: l) = sum l + x.
-Proof.
-intros. unfold sum. simpl. lia.
-Qed.
 
 (* A wallet is expressive *)
 (* if each amount below the maximum is equal to the sum of a subset of the wallet *)
