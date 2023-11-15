@@ -386,6 +386,17 @@ unfold expresses. intros. split.
 - lia.
 Qed.
 
+Theorem expresses_leq :
+forall w t,
+expresses w t ->
+S t <= sum w ->
+expresses w (S t).
+Proof.
+unfold expresses. intros w t [F G] H. split.
+- assumption.
+- assumption.
+Qed.
+
 (* If a wallet expresses a target, *)
 (* then the wallet plus the next coin can express the target plus one *)
 (* In other words, adding the next coin makes progress. *)
@@ -407,6 +418,10 @@ split.
 - simpl. lia.
 Qed.
 
+(* Strategy to compute wallets that express a target *)
+(* Start with the empty wallet *)
+(* Keep the wallet from the previous step if it is large enough *)
+(* Otherwise, add the next coin to the wallet *)
 Fixpoint strategy (l: list nat) (t: nat) : list nat :=
 match t with
 | 0 => []
@@ -421,7 +436,26 @@ Compute (strategy [5;2;1] 3).
 Compute (strategy [5;2;1] 4).
 Compute (strategy [5;2;1] 5).
 
-Theorem expresses_strategy :
+(* The strategy returns a wallet that expresses the target *)
+Theorem strategy_correct :
 forall l t,
+is_good l ->
 expresses (strategy l t) t.
-Admitted.
+Proof.
+induction t; intros.
+(* Target 0 *)
+- apply expresses_zero. apply expressive_nil.
+(* Target S t *)
+- unfold strategy. fold (strategy l t).
+  destruct (S t <=? sum (strategy l t)) eqn:G.
+  (* Target is less equal sum of existing wallet *)
+  (* Express target using existing wallet *)
+  + apply leb_complete in G. apply expresses_leq.
+    * apply IHt. assumption.
+    * assumption.
+  (* Target equals sum of existing wallet plus 1 *)
+  (* Express target using wallet plus next coin *)
+  + apply expresses_next_coin.
+    * assumption.
+    * apply IHt. assumption.
+Qed.
