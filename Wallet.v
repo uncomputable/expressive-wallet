@@ -459,3 +459,60 @@ induction t; intros.
     * assumption.
     * apply IHt. assumption.
 Qed.
+
+(* Either *)
+(* 1. The last coin was added because the wallet did not express the target, or *)
+(* 2. The wallet was carried over from the previous step *)
+Theorem strategy_monotonous :
+forall l t x w,
+strategy l (S t) = x :: w ->
+~ expresses w (S t) \/ strategy l t = x :: w.
+Proof.
+induction t; intros.
+(* Target S 0 *)
+- unfold strategy in H. simpl in H. inversion H. left. intros Contra.
+  unfold expresses in Contra. simpl in Contra. lia.
+(* Target S (S t) *)
+- unfold strategy in H. fold (strategy l (S t)) in H.
+  destruct (S (S t) <=? sum (strategy l (S t))) eqn:G.
+  (* Target is less equal sum from previous step *)
+  + right. assumption.
+  (* Target is greater than sum from previous step *)
+  + left. apply leb_complete_conv in G. intros Contra.
+    assert (F: strategy l (S t) = w).
+    { injection H as _ H. subst. reflexivity. } subst.
+    unfold expresses in Contra. destruct Contra as [_ Contra].
+    lia.
+Qed.
+
+(* Discriminate tactic cannot handle this :/ *)
+Theorem list_cons_neq :
+forall (X: Type) (x: X) (l: list X),
+x :: l <> l.
+Proof.
+induction l; intros H.
+- inversion H.
+- apply IHl. inversion H. repeat rewrite H2. reflexivity.
+Qed.
+
+(* The strategy returns a wallet *)
+(* where the last coin cannot be removed relative to the previous step *)
+(* In other words, the strategy adds coins only when necessary *)
+(* TODO: What about removing coins from earlier steps? *)
+Theorem strategy_minimal :
+forall l t x w,
+strategy l (S t) = x :: w ->
+strategy l t = w ->
+~ expresses w (S t).
+Proof.
+intros l t x w F G H. destruct t.
+(* Target S 0 *)
+- unfold strategy in G. subst.
+  unfold expresses in H. destruct H as [_ H]. simpl in H. lia.
+(* Target S (S t) *)
+- apply strategy_monotonous in F. destruct F as [F|F].
+  (* Previous wallet does not express target *)
+  + apply F. assumption.
+  (* Previous wallet equals current wallet *)
+  + rewrite F in G. eapply list_cons_neq. apply G.
+Qed.
