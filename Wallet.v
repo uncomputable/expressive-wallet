@@ -390,46 +390,22 @@ Qed.
 (* then the wallet plus the next coin can express the target plus one *)
 (* In other words, adding the next coin makes progress. *)
 Theorem expresses_next_coin :
-forall t w l,
+forall l w t,
 is_good l ->
 expresses w t ->
 expresses ((next_coin l (S t)) :: w) (S t).
 Proof.
-Admitted.
-(* TODO: Prove next_coin l (S t) <= S (sum w) *)
-(* Then use expressive_cons *)
-(*
-unfold expresses. destruct t; intros; simpl.
-- destruct x.
-  (* Amount x = 0 *)
-  + exists []. split.
-    * apply subset_nil.
-    * reflexivity.
-  (* Amount x = 1 *)
-  + exists [1]. assert (G: x = 0). { lia. } subst. split.
-    * rewrite next_coin_one.
-      -- apply subset_eq. apply subset_nil.
-      -- assumption.
-    * reflexivity.
-- destruct (x =? S (S t)) eqn:G.
-  (* Amount x = S (S t)) *)
-  (* Construct subset from next_coin l (S (S t)) and existing subsets of wallet w *)
-  + rewrite Nat.eqb_eq in G; subst.
-    assert (G: exists x, x <= S t /\ next_coin l (S (S t)) + x = S (S t)).
-    { apply next_coin_gap. assumption. } destruct G as [x [F G]].
-    apply (H0 x) in F. destruct F as [w' [E F]].
-    exists (next_coin l (S (S t)) :: w'). split.
-    * apply subset_eq. assumption.
-    * rewrite sum_cons. lia.
-  (* Amount x <= S t *)
-  (* Take existing subset of wallet w *)
-  + rewrite Nat.eqb_neq in G. assert (F: x <= S t). { lia. }
-    apply H0 in F. destruct F as [w' [E F]].
-    exists w'. split.
-    * apply subset_cons. assumption.
-    * assumption.
+unfold expresses. intros l w t F [G H].
+assert (E: 1 <= next_coin l (S t) <= S t).
+{ split.
+  - apply next_coin_ge_one. assumption.
+  - apply next_coin_le. }
+split.
+- apply expressive_cons.
+  + assumption.
+  + lia.
+- simpl. lia.
 Qed.
-*)
 
 Fixpoint strategy (l: list nat) (t: nat) : list nat :=
 match t with
