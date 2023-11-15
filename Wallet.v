@@ -143,7 +143,7 @@ intros. apply next_coin_ge.
 - lia.
 Qed.
 
-Theorem next_coin_one :
+Example next_coin_one :
 forall l,
 is_good l ->
 next_coin l 1 = 1.
