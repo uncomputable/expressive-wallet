@@ -24,5 +24,5 @@ Then generate and execute the Coq makefile.
 
 ```bash
 coq_makefile -f _CoqProject -o CoqMakefile
-make -f CoqMakeFile
+make -f CoqMakefile
 ```
